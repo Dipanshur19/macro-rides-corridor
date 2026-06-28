@@ -1,0 +1,24 @@
+{
+  "name": "macro-rides-corridor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Zone Boundary + Dynamic Route Corridor Visualization Tool for Macro Rides (H3 + Leaflet)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "h3-js": "^4.2.1",
+    "leaflet": "^1.9.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}

@@ -1,0 +1,9 @@
+# One-click deploy config for Netlify.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
