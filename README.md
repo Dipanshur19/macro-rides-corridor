@@ -1,163 +1,151 @@
-# Macro Rides — Zone Boundary + Dynamic Route Corridor Visualization Tool
+# Macro Rides — Dispatch Console
 
-A web demo that, given a driver's live route, draws a **350 m buffer corridor**
-around the route, indexes that corridor with **H3** (Uber's hexagonal spatial
-index), and highlights every **eligible pickup point** that falls inside it — in
-real time as the driver moves.
+A production-grade dispatch operations dashboard for hyperlocal EV mobility. Given a driver's live route across **Delhi NCR**, it builds a **350 m buffer corridor**, indexes that corridor with **H3** (Uber's hexagonal spatial index), and highlights every **eligible pickup point** inside it — updating live as the driver moves. Includes a real **3D extruded-hexagon** view powered by deck.gl.
 
-> **Stack:** React + Vite · **H3** (`h3-js` v4) for spatial indexing/queries ·
-> **Leaflet** (`react-leaflet`) for map rendering · **Turf.js** for geometry.
+Built to look and behave like an internal ops tool used by a ride-hailing/EV-mobility company.
 
 ---
 
-## ✨ What it does
+## Features
 
-- **Driver's route** — a polyline with a live, moving driver marker (simulated GPS).
-- **350 m corridor** — a buffer "tube" generated around the route with Turf.
-- **Zone boundaries** — operational service zones drawn as polygons.
-- **Eligible pickup points** — points inside the corridor are highlighted green;
-  the rest are dimmed. Eligibility is decided by an **H3 cell-membership test**.
-- **Real-time / simulated updates** — press **Play** and watch eligibility change
-  as the driver advances along the route.
-
-### Interactive controls
-- Play / pause / reset / scrub the driver along the route, adjustable speed.
-- **Corridor buffer width** (100–750 m) and **H3 resolution** (8–11) sliders —
-  the live stats show the accuracy/granularity trade-off.
-- **Dynamic look-ahead** corridor (slides with the driver) vs **whole-route** mode.
-- Toggle layers: corridor buffer, **raw H3 cells**, service zones, ineligible points.
-- **Draw your own route** by clicking waypoints on the map.
+- **Live route simulation** — animated driver with play / pause / reset, scrubbing, adjustable speed, and 1x / 2x / 5x playback.
+- **350 m corridor** — generated with Turf.js; dynamic look-ahead mode (corridor slides with the driver) or whole-route mode.
+- **H3 spatial indexing** — the corridor polygon is rasterised into H3 cells; pickup eligibility is a two-phase filter (H3 broad-phase + exact point-in-polygon narrow-phase).
+- **3D H3 hexagons** — deck.gl `H3HexagonLayer`, extruded by eligible-pickup density, with tilt / rotate / zoom.
+- **500 mock pickup points** — colour-coded eligible / candidate / ineligible, with interactive popups (ID, H3 cell, status, distance, zone).
+- **Service zones** + per-zone analytics (eligible vs total).
+- **Performance panel** — total -> H3 candidates -> eligible funnel, plus pipeline processing time in milliseconds.
+- **H3 Inspector** — click any cell or pickup to inspect its H3 index, resolution, area, centre, and ring-1 neighbours.
+- **Live event log**, **demand heatmap**, **layer toggles**, **route switcher / draw-your-own-route**, **search**, **FPS counter**, **keyboard shortcuts**.
+- **Light and dark themes**, fully responsive (desktop / tablet / mobile).
 
 ---
 
-## 🧠 The spatial approach (how H3 is used)
+## Tech stack
 
-This is the core of the assignment. The eligibility decision is **not** a naive
-"loop over every point and measure distance" — it uses H3 as a spatial index, the
-pattern that scales to millions of points and many concurrent drivers.
+| Area | Choice |
+| --- | --- |
+| Framework | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS (CSS-variable theme tokens, light/dark) |
+| State | Zustand |
+| Animation | Framer Motion |
+| 2D map | Leaflet + React-Leaflet (token-free CARTO/OSM tiles) |
+| 3D map | deck.gl (`H3HexagonLayer`, `TileLayer`, `ScatterplotLayer`, `PathLayer`) |
+| 3D scenes | Three.js via React Three Fiber |
+| Spatial | h3-js (v4), Turf.js (v7) |
+| Icons | lucide-react |
+
+No map provider API key is required.
+
+---
+
+## The spatial approach (how H3 is used)
 
 ```
- 1. Route (LineString)
-        │  Turf.buffer(route, 350 m)
-        ▼
- 2. Corridor polygon  ───────────────►  (rendered as the translucent band)
-        │  h3.polygonToCells(polygon, res)
-        ▼
- 3. Corridor cell-set  =  { 8a2f… , 8a30… , … }   ← the SPATIAL INDEX
-        ▲
-        │  h3.latLngToCell(point, res)
- 4. Pickup point  ──►  cell  ──►  corridorCells.has(cell)  ?  ELIGIBLE : not
+ Route (LineString)
+     | Turf.buffer(route, 350 m)
+     v
+ Corridor polygon  ----------------->  rendered band (2D) / extruded hexagons (3D)
+     | h3.polygonToCells(polygon, res)
+     v
+ Corridor H3 cell-set  =  { 8a2f..., 8a30..., ... }   (the spatial index)
+     ^
+     | h3.latLngToCell(point, res)
+ Pickup point --> cell --> broad-phase: corridorCells.has(cell)?
+                           narrow-phase: exact point-in-polygon(buffer)?
+                           --> ELIGIBLE
 ```
 
-- **Step 2 → 3** (`polygonToCells`): the corridor polygon is rasterised into the
-  set of H3 cells that cover it. This set *is* the index of "inside the corridor".
-- **Step 4** (`latLngToCell` + `Set.has`): a pickup point is mapped to its H3 cell
-  and tested for membership in the corridor set. This is an **O(1)** hash lookup
-  per point instead of an O(n) geometric scan — the key scalability win.
-- For **transparency/verification**, the app *also* computes each point's exact
-  perpendicular distance to the route (`turf.pointToLineDistance`) and shows it in
-  the tooltip. Higher H3 resolutions make the cell coverage hug the 350 m boundary
-  more tightly (visible in the live stats), which is the resolution/accuracy
-  trade-off H3 is designed around.
+- **Broad-phase (O(1)):** each pickup is mapped to its H3 cell (`latLngToCell`) and tested for membership in the corridor cell-set. This prunes the vast majority of points with a hash lookup instead of an O(n) geometric scan — the pattern that scales to millions of points and many concurrent drivers.
+- **Narrow-phase (exact):** only the surviving candidates pay for the precise point-in-polygon test against the 350 m buffer.
+- The **Performance panel** shows this funnel live (input -> candidates -> eligible) and the total processing time. Higher H3 resolutions hug the 350 m boundary more tightly (visible in the candidate counts) — the resolution/accuracy trade-off H3 is designed for.
 
-**Why H3 (hexagons)?** Uniform neighbour distances, no projection distortion at
-city scale, and cheap `Set` membership — ideal for "is this point near the route"
-queries done continuously for live drivers.
-
-### Dynamic corridor
-In **look-ahead** mode the corridor is rebuilt around only the slice of route from
-just behind the driver to a configurable distance ahead. As the driver moves, the
-corridor slides and pickup eligibility updates live — the "dynamic route corridor"
-the brief asks for. Corridor rebuilds are snapped to ~25 m of movement so the H3
-index isn't recomputed on every animation frame.
+Corridor rebuilds are snapped to ~25 m of driver movement, so the H3 index is never recomputed on every animation frame.
 
 ---
 
-## 🗂 Architecture
-
-Separation of concerns keeps the **spatial engine independent of the UI** (easy to
-unit-test and reuse server-side).
+## Architecture
 
 ```
 src/
-├── config/
-│   └── constants.js          # map defaults, colours, H3 resolution reference table
-├── data/
-│   ├── routes.js             # preset driver routes (GeoJSON [lng,lat])
-│   ├── zones.js              # operational service zones (GeoJSON FeatureCollection)
-│   └── pickupPoints.js       # deterministic (seeded) pickup-point generator
-├── lib/                      # ── pure spatial engine (no React) ──
-│   ├── geo.js                # Turf helpers: buffer, slice, distance, lat/lng convert
-│   └── h3Corridor.js         # H3: polygonToCells, eligibility, cell→polygon, area
-├── hooks/
-│   └── useRouteSimulation.js # rAF-driven driver movement (play/pause/seek/speed)
-├── components/
-│   ├── MapView.jsx           # Leaflet map + fit-bounds + draw handler
-│   ├── ControlPanel.jsx      # all controls
-│   ├── StatsPanel.jsx        # live eligibility metrics
-│   └── layers/               # one React-Leaflet layer per concern
-│       ├── ZonesLayer.jsx
-│       ├── RouteLayer.jsx
-│       ├── CorridorLayer.jsx
-│       ├── H3CellsLayer.jsx
-│       ├── PickupPointsLayer.jsx
-│       └── DriverMarker.jsx
-├── App.jsx                   # state + memoised spatial pipeline + layout
-└── main.jsx                  # entry
+  config/        config (map, defaults, tiles), shortcuts
+  constants/     palette (theme + deck colours)
+  types/         shared TypeScript types
+  data/          Delhi NCR routes, 500 pickups, service zones
+  utils/         geometry (lng/lat <-> lat/lng, bearing), helpers
+  services/      PURE spatial engine (no React):
+                   routeService  - length / interpolation / slicing
+                   bufferService - Turf 350 m buffer
+                   h3Service     - polygonToCells, boundaries, inspector
+                   geojsonService- point-in-polygon, distance, zone lookup
+                   pickupService - two-phase classify + timing + zone stats
+  store/         Zustand store (single source of truth)
+  hooks/         useSimulation, useSpatialPipeline, useActiveRoute,
+                 useFps, useTheme, useKeyboardShortcuts, useEventFeed
+  components/
+    header/      top bar (status, search, FPS/ms, 2D-3D, theme)
+    sidebar/     route, driver status, pickup stats, zone analytics
+    controls/    simulation, corridor params, layer toggles
+    map/         MapView (2D Leaflet) + DeckView (3D deck.gl) + layers
+    panels/      Performance, EventLog, H3Inspector, Shortcuts
+    three/       LoadingScreen + HexWaveField (R3F)
+    legend/ ui/  legend + design-system primitives
+  pages/         Dashboard
+  App.tsx, main.tsx
 ```
 
-**Coordinate convention:** the spatial engine works entirely in GeoJSON `[lng, lat]`
-order (matching Turf and H3's GeoJSON mode); conversion to Leaflet's `[lat, lng]`
-happens only at the rendering boundary (`toLatLng` / `toLatLngs`). This avoids the
-single most common class of geospatial bugs.
+The spatial engine (`services/`) is intentionally framework-free, so it is unit-testable and reusable server-side. Coordinates are kept in GeoJSON `[lng, lat]` order everywhere except the Leaflet render boundary.
 
 ---
 
-## 🚀 Run locally
+## Getting started
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
 ```
 
-Production build / preview:
+Production build and preview:
 
 ```bash
-npm run build      # outputs to dist/
+npm run build      # tsc -b && vite build -> dist/
 npm run preview
 ```
 
-## ☁️ Deploy
+Type-check only:
 
-The app is a static site (no API keys — uses free OpenStreetMap/CARTO tiles), so it
-deploys anywhere:
-
-- **Netlify** — config in `netlify.toml` (build `npm run build`, publish `dist`).
-- **Vercel** — config in `vercel.json` (framework `vite`).
-- **GitHub Pages** — `npm run build` then publish `dist/` (the build uses a relative
-  `base`, so it works from a subpath).
+```bash
+npm run typecheck
+```
 
 ---
 
-## ✅ Mapping to the evaluation criteria
+## Deployment
 
-| Criterion | Where it shows up |
-|---|---|
-| Accuracy of spatial calculations | 350 m Turf buffer → `polygonToCells`; per-point distance verification; live res/accuracy stats |
-| Quality of visualization | Dark basemap, layered corridor/zones/H3/route/driver, tooltips, legend, stats |
-| Code structure & scalability | Pure `lib/` spatial engine separate from UI; O(1) H3 membership; memoised, snapped recomputation |
-| User experience & interface | Play/scrub/speed, draw-your-own-route, layer toggles, live metrics, responsive layout |
-| Overall functionality | Real-time simulated driver with live-updating corridor & eligibility |
+The app is a static site (no API keys). Configs are included:
+
+- **Vercel** — `vercel.json` (framework `vite`, output `dist`). Import the repo and deploy.
+- **Netlify** — `netlify.toml` (build `npm run build`, publish `dist`).
+- **GitHub Pages** — `npm run build`, publish `dist/` (build uses a relative base).
+
+A GitHub Actions workflow (`.github/workflows/deploy.yml`) verifies the build on every push.
 
 ---
 
-## 🛠 Tech stack & versions
+## Keyboard shortcuts
 
-| Library | Purpose | Version |
-|---|---|---|
-| `h3-js` | Hexagonal spatial indexing & queries | 4.x |
-| `react-leaflet` / `leaflet` | Map rendering | 4.x / 1.9 |
-| `@turf/*` | Buffer, slice, distance geometry | 7.x |
-| `react` / `vite` | App framework / build | 18 / 5 |
+`Space` play/pause · `R` reset · `1/2/5` speed · `H` H3 grid · `C` corridor · `Z` zones · `M` 2D/3D · `T` theme · `E` event log · `P` performance · `/` search · `?` shortcuts.
 
-Map tiles © OpenStreetMap contributors © CARTO.
+---
+
+## Evaluation criteria mapping
+
+| Criterion | Where |
+| --- | --- |
+| Accuracy of spatial calculations | 350 m Turf buffer -> `polygonToCells`; two-phase H3 + exact point-in-polygon; per-point distance verification |
+| Quality of visualisation | Themed 2D map, 3D extruded H3 hexagons, layered overlays, animated transitions |
+| Code structure and scalability | Framework-free `services/` engine, Zustand store, O(1) H3 broad-phase, snapped recomputation |
+| User experience and interface | Playback, draw route, search, panels, shortcuts, responsive, light/dark |
+| Overall functionality | Live simulated driver with corridor + eligibility updating in real time |
+
+Map tiles (c) OpenStreetMap contributors (c) CARTO.
