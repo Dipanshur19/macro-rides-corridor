@@ -6,26 +6,14 @@ import { useStore } from '@/store/useStore';
 import { DECK_INITIAL_VIEW, TILES } from '@/constants/config';
 import { DECK_COLORS, MAP_COLORS } from '@/constants/palette';
 import { hexToRgb } from '@/utils/helpers';
-import { cellFor } from '@/services/h3Service';
 import { pointAtDistance } from '@/services/routeService';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
 
 type RGBA = [number, number, number, number];
 
-// Coarse resolution for the city-scale 3D demand field (chunky, visible columns).
-const DEMAND_RES = 7;
-
-interface DemandDatum {
+interface HexDatum {
   hex: string;
-  count: number;
   eligible: number;
-}
-
-const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
-function ramp(from: string, to: string, t: number, alpha: number): RGBA {
-  const a = hexToRgb(from);
-  const b = hexToRgb(to);
-  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t), alpha];
 }
 
 export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
@@ -36,26 +24,20 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   const showRoute = useStore((s) => s.layers.route);
   const follow = useStore((s) => s.followDriver);
   const isPlaying = useStore((s) => s.isPlaying);
-  // Raw progress drives a buttery-smooth driver beacon + follow camera.
   const rawProgress = useStore((s) => s.progressMeters);
 
   const tile = theme === 'dark' ? TILES.dark : TILES.light;
 
-  // City-scale demand field: aggregate ALL pickups into coarse H3 cells, and
-  // track how many are currently eligible so the corridor "lights up" green.
-  const { demand, maxCount } = useMemo(() => {
-    const m = new Map<string, DemandDatum>();
+  // Extrude the actual corridor H3 cells. Cells that contain eligible pickups
+  // rise higher and turn green, so the 3D corridor "tube" lights up where
+  // pickups are matched. Small (res 10) footprints stay column-like at any zoom.
+  const hexData = useMemo<HexDatum[]>(() => {
+    const eligByCell = new Map<string, number>();
     for (const p of pipeline.pickups) {
-      const hex = cellFor(p.lat, p.lng, DEMAND_RES);
-      const cur = m.get(hex) ?? { hex, count: 0, eligible: 0 };
-      cur.count++;
-      if (p.eligible) cur.eligible++;
-      m.set(hex, cur);
+      if (p.eligible) eligByCell.set(p.cell, (eligByCell.get(p.cell) ?? 0) + 1);
     }
-    let max = 1;
-    for (const d of m.values()) max = Math.max(max, d.count);
-    return { demand: [...m.values()], maxCount: max };
-  }, [pipeline.pickups]);
+    return [...pipeline.cells].map((hex) => ({ hex, eligible: eligByCell.get(hex) ?? 0 }));
+  }, [pipeline.cells, pipeline.pickups]);
 
   const pickupData = useMemo(
     () =>
@@ -77,16 +59,26 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
     [pipeline.coords, rawProgress]
   );
 
-  // Controlled camera: user drags update it; when following + playing it
-  // smoothly re-centres on the driver each frame (preserving pitch/bearing/zoom).
-  const [viewState, setViewState] = useState<Record<string, number>>(DECK_INITIAL_VIEW);
+  // Controlled camera that smoothly follows the driver (keeps pitch/zoom/bearing).
+  const start = pipeline.coords[0];
+  const [viewState, setViewState] = useState<Record<string, number>>(() =>
+    start
+      ? { ...DECK_INITIAL_VIEW, longitude: start[0], latitude: start[1] }
+      : DECK_INITIAL_VIEW
+  );
+
+  // Recenter on the route start whenever the active route changes.
+  useEffect(() => {
+    const c = pipeline.coords[0];
+    if (c) setViewState((v) => ({ ...v, longitude: c[0], latitude: c[1] }));
+  }, [pipeline.coords]);
+
+  // Smoothly follow the driver while playing.
   useEffect(() => {
     if (follow && isPlaying && driverPos) {
       setViewState((v) => ({ ...v, longitude: driverPos[0], latitude: driverPos[1] }));
     }
   }, [driverPos, follow, isPlaying]);
-
-  const driverHeight = maxCount * 220 + 2600;
 
   const layers = [
     new TileLayer({
@@ -111,24 +103,22 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
     }),
 
     showHexes
-      ? new H3HexagonLayer<DemandDatum>({
-          id: 'demand-hex',
-          data: demand,
+      ? new H3HexagonLayer<HexDatum>({
+          id: 'corridor-hex',
+          data: hexData,
           extruded: true,
           getHexagon: (d) => d.hex,
-          getElevation: (d) => 120 + d.count * 220 + d.eligible * 320,
+          getElevation: (d) => 120 + d.eligible * 220,
           elevationScale: 1,
           getFillColor: (d) =>
-            d.eligible > 0
-              ? ramp('#15803d', '#4ade80', Math.min(1, d.eligible / Math.max(1, d.count)), 225)
-              : ramp('#1e3a8a', '#22d3ee', Math.min(1, d.count / maxCount), 170),
-          getLineColor: [255, 255, 255, 35],
+            d.eligible > 0 ? DECK_COLORS.eligibleFill : DECK_COLORS.corridorFill,
+          getLineColor: [255, 255, 255, 55],
           lineWidthMinPixels: 1,
           wireframe: true,
           pickable: true,
-          material: { ambient: 0.65, diffuse: 0.6, shininess: 40 },
-          opacity: 0.9,
-          updateTriggers: { getFillColor: [maxCount], getElevation: [] },
+          material: { ambient: 0.7, diffuse: 0.6, shininess: 32 },
+          opacity: 0.88,
+          updateTriggers: { getElevation: hexData.length, getFillColor: hexData.length },
         })
       : null,
 
@@ -151,9 +141,9 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
           data: pickupData,
           getPosition: (d) => d.position,
           getFillColor: (d) => d.color,
-          getRadius: 45,
-          radiusMinPixels: 2,
-          radiusMaxPixels: 6,
+          getRadius: 30,
+          radiusMinPixels: 2.5,
+          radiusMaxPixels: 7,
           stroked: false,
         })
       : null,
@@ -162,15 +152,15 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
       ? new ColumnLayer<{ position: [number, number] }>({
           id: 'driver',
           data: [{ position: driverPos as [number, number] }],
-          diskResolution: 6,
-          radius: 140,
+          diskResolution: 12,
+          radius: 45,
+          radiusUnits: 'meters',
           extruded: true,
           getPosition: (d) => d.position,
-          getElevation: driverHeight,
+          getElevation: 700,
           elevationScale: 1,
           getFillColor: DECK_COLORS.driver,
           opacity: 0.95,
-          updateTriggers: { getElevation: [driverHeight] },
         })
       : null,
   ].filter(Boolean);
