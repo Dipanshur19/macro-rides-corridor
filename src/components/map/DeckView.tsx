@@ -5,7 +5,7 @@ import { BitmapLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/
 import { useStore } from '@/store/useStore';
 import { DECK_INITIAL_VIEW, TILES } from '@/constants/config';
 import { DECK_COLORS, MAP_COLORS } from '@/constants/palette';
-import { hexToRgb } from '@/utils/helpers';
+import { hexToRgb, clamp } from '@/utils/helpers';
 import { pointAtDistance } from '@/services/routeService';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
 
@@ -25,6 +25,7 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   const follow = useStore((s) => s.followDriver);
   const isPlaying = useStore((s) => s.isPlaying);
   const rawProgress = useStore((s) => s.progressMeters);
+  const recenterNonce = useStore((s) => s.recenterNonce);
 
   const tile = theme === 'dark' ? TILES.dark : TILES.light;
 
@@ -72,6 +73,18 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
     const c = pipeline.coords[0];
     if (c) setViewState((v) => ({ ...v, longitude: c[0], latitude: c[1] }));
   }, [pipeline.coords]);
+
+  // Manual "recenter" resets the camera to the route-start default framing.
+  useEffect(() => {
+    if (recenterNonce === 0) return;
+    const c = pipeline.coords[0];
+    setViewState({
+      ...DECK_INITIAL_VIEW,
+      longitude: c ? c[0] : DECK_INITIAL_VIEW.longitude,
+      latitude: c ? c[1] : DECK_INITIAL_VIEW.latitude,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recenterNonce]);
 
   // Smoothly follow the driver while playing.
   useEffect(() => {
@@ -168,7 +181,13 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   return (
     <DeckGL
       viewState={viewState as any}
-      onViewStateChange={(e: any) => setViewState(e.viewState)}
+      onViewStateChange={(e: any) => {
+        // Clamp zoom & pitch so the extruded hexagons can never distort.
+        const v = e.viewState;
+        v.zoom = clamp(v.zoom, 10.5, 16);
+        v.pitch = clamp(v.pitch, 0, 60);
+        setViewState(v);
+      }}
       controller={{ dragRotate: true }}
       layers={layers as any}
       style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%' }}

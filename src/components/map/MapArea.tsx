@@ -3,6 +3,7 @@ import { Move3d, Pencil } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import MapView from './MapView';
 import DeckView from './DeckView';
+import MapControls from './MapControls';
 import Legend from '@/components/legend/Legend';
 import PerformancePanel from '@/components/panels/PerformancePanel';
 import EventLog from '@/components/panels/EventLog';
@@ -24,6 +25,7 @@ export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
 
       {/* overlays */}
       <div className="pointer-events-none absolute inset-0 z-[500]">
+        <MapControls />
         {/* top-center hints */}
         <div className="absolute left-1/2 top-3 flex -translate-x-1/2 flex-col items-center gap-2">
           {drawing && (

@@ -49,6 +49,8 @@ export interface StoreState {
   draftPoints: LngLat[];
   // events
   events: EventLogEntry[];
+  // recenter signal (incremented to ask the map to recenter)
+  recenterNonce: number;
 
   // actions
   setRoute: (id: string) => void;
@@ -87,6 +89,7 @@ export interface StoreState {
 
   pushEvent: (type: EventType, message: string) => void;
   clearEvents: () => void;
+  requestRecenter: () => void;
 }
 
 let eventId = 0;
@@ -135,6 +138,7 @@ export const useStore = create<StoreState>((set, get) => ({
   draftPoints: [],
 
   events: [],
+  recenterNonce: 0,
 
   setRoute: (id) => {
     if (id === get().routeId && !get().customRoute) return;
@@ -219,4 +223,5 @@ export const useStore = create<StoreState>((set, get) => ({
       ].slice(0, EVENT_LOG_LIMIT),
     })),
   clearEvents: () => set({ events: [] }),
+  requestRecenter: () => set((s) => ({ recenterNonce: s.recenterNonce + 1 })),
 }));

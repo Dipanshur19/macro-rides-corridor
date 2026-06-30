@@ -43,6 +43,8 @@ export default function MapView({ pipeline }: { pipeline: SpatialPipeline }) {
     <MapContainer
       center={MAP_CENTER}
       zoom={MAP_ZOOM}
+      minZoom={10}
+      maxZoom={18}
       zoomControl
       preferCanvas
       className="h-full w-full"

@@ -11,12 +11,13 @@ export default function MapController({ coords }: { coords: LngLat[] }) {
   const drawing = useStore((s) => s.drawing);
   const addDraftPoint = useStore((s) => s.addDraftPoint);
   const routeId = useStore((s) => s.routeId);
+  const recenterNonce = useStore((s) => s.recenterNonce);
 
   useEffect(() => {
     if (drawing || coords.length < 2) return;
     map.fitBounds(L.latLngBounds(toLatLngs(coords)), { padding: [70, 70] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeId, drawing]);
+  }, [routeId, drawing, recenterNonce]);
 
   useMapEvents({
     click(e) {
