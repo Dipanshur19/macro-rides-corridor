@@ -13,7 +13,7 @@ export default function LoadingScreen({ dark }: { dark: boolean }) {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
-      className="absolute inset-0 z-[100] overflow-hidden bg-bg"
+      className="absolute inset-0 z-[3000] overflow-hidden bg-bg"
     >
       <Canvas
         shadows

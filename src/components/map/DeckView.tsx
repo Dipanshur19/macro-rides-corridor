@@ -1,13 +1,15 @@
 import { useMemo, useEffect, useState } from 'react';
 import DeckGL from '@deck.gl/react';
 import { TileLayer, H3HexagonLayer } from '@deck.gl/geo-layers';
-import { BitmapLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
+import { BitmapLayer, PathLayer, ScatterplotLayer, ColumnLayer, PolygonLayer } from '@deck.gl/layers';
 import { useStore } from '@/store/useStore';
 import { DECK_INITIAL_VIEW, TILES } from '@/constants/config';
 import { DECK_COLORS, MAP_COLORS } from '@/constants/palette';
 import { hexToRgb, clamp } from '@/utils/helpers';
 import { pointAtDistance } from '@/services/routeService';
+import { ZONES } from '@/data/zones';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
+import type { ZoneFeature } from '@/types';
 
 type RGBA = [number, number, number, number];
 
@@ -22,6 +24,7 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   const showPickups = useStore((s) => s.layers.pickups);
   const showIneligible = useStore((s) => s.layers.ineligible);
   const showRoute = useStore((s) => s.layers.route);
+  const showZones = useStore((s) => s.layers.zones);
   const follow = useStore((s) => s.followDriver);
   const isPlaying = useStore((s) => s.isPlaying);
   const rawProgress = useStore((s) => s.progressMeters);
@@ -114,6 +117,21 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
         });
       },
     }),
+
+    showZones
+      ? new PolygonLayer<ZoneFeature>({
+          id: 'zones',
+          data: ZONES.features,
+          getPolygon: (f) => f.geometry.coordinates[0] as [number, number][],
+          stroked: true,
+          filled: true,
+          extruded: false,
+          getLineColor: (f) => [...hexToRgb(f.properties.color), 255],
+          getFillColor: (f) => [...hexToRgb(f.properties.color), 22],
+          getLineWidth: 24,
+          lineWidthMinPixels: 1.5,
+        })
+      : null,
 
     showHexes
       ? new H3HexagonLayer<HexDatum>({
