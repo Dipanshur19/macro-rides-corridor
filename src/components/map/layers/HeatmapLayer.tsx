@@ -6,6 +6,9 @@ import { useStore } from '@/store/useStore';
 import { HEAT_GRADIENT } from '@/constants/palette';
 import { PICKUPS } from '@/data/pickups';
 
+type HeatPoint = [number, number, number];
+type HeatLayerFn = (points: HeatPoint[], options?: Record<string, unknown>) => L.Layer;
+
 /** Pickup-demand density heatmap (leaflet.heat). */
 export default function HeatmapLayer() {
   const map = useMap();
@@ -13,8 +16,9 @@ export default function HeatmapLayer() {
 
   useEffect(() => {
     if (!visible) return;
-    const points = PICKUPS.map((p) => [p.lat, p.lng, 0.6]) as [number, number, number][];
-    const layer = (L as typeof L & { heatLayer: Function }).heatLayer(points, {
+    const points: HeatPoint[] = PICKUPS.map((p) => [p.lat, p.lng, 0.6]);
+    const heatLayer = (L as unknown as { heatLayer: HeatLayerFn }).heatLayer;
+    const layer = heatLayer(points, {
       radius: 26,
       blur: 20,
       maxZoom: 17,

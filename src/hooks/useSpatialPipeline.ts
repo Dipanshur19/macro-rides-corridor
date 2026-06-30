@@ -1,17 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { useActiveRoute } from './useActiveRoute';
 import { CORRIDOR_SNAP_METERS, LOOK_BEHIND_METERS } from '@/constants/config';
 import { sliceRoute } from '@/services/routeService';
-import { bufferRoute } from '@/services/bufferService';
-import {
-  polygonFeatureToCells,
-  corridorAreaKm2,
-  cellsToLeafletHexes,
-  type LeafletHex,
-} from '@/services/h3Service';
-import { classifyPickups, zoneStats } from '@/services/pickupService';
-import { PICKUPS } from '@/data/pickups';
+import { cellsToLeafletHexes, type LeafletHex } from '@/services/h3Service';
+import { zoneStats } from '@/services/pickupService';
 import { ZONES } from '@/data/zones';
 import type {
   ClassifiedPickup,
@@ -33,10 +26,36 @@ export interface SpatialPipeline {
   zones: ZoneStat[];
 }
 
+interface WorkerResult {
+  bufferFeature: Feature<Polygon | MultiPolygon> | null;
+  cells: string[];
+  pickups: ClassifiedPickup[];
+  stats: PipelineStats;
+}
+
+const EMPTY_STATS: PipelineStats = {
+  total: 0,
+  candidates: 0,
+  eligible: 0,
+  rejected: 0,
+  cellCount: 0,
+  areaKm2: 0,
+  routeKm: 0,
+  processingMs: 0,
+};
+
+const EMPTY: WorkerResult = {
+  bufferFeature: null,
+  cells: [],
+  pickups: [],
+  stats: EMPTY_STATS,
+};
+
 /**
- * The full derived spatial state. Heavy work (buffer -> H3 cells -> two-phase
- * pickup classification) is recomputed only when settings change or the driver
- * has moved a snapped step (CORRIDOR_SNAP_METERS), never on every frame.
+ * Derived spatial state. The heavy buffer -> H3 -> classification work runs in
+ * a Web Worker (see workers/pipeline.worker.ts); the main thread only slices
+ * the corridor (cheap) and renders. Recomputation is snapped to driver
+ * movement so requests fire at most once per CORRIDOR_SNAP_METERS.
  */
 export function useSpatialPipeline(): SpatialPipeline {
   const { coords, totalMeters } = useActiveRoute();
@@ -46,8 +65,6 @@ export function useSpatialPipeline(): SpatialPipeline {
   const lookAheadMeters = useStore((s) => s.lookAheadMeters);
   const showH3 = useStore((s) => s.layers.h3);
 
-  // Snapped progress: this selector returns the same value for ~25 m of travel,
-  // so the heavy memos below do not recompute every animation frame.
   const snapped = useStore(
     (s) =>
       Math.round(s.progressMeters / CORRIDOR_SNAP_METERS) * CORRIDOR_SNAP_METERS
@@ -61,46 +78,53 @@ export function useSpatialPipeline(): SpatialPipeline {
     return sliceRoute(coords, start, end);
   }, [coords, corridorMode, snapped, lookAheadMeters]);
 
-  const { bufferFeature, cells } = useMemo(() => {
-    const bf = bufferRoute(corridorCoords, bufferMeters);
-    const cs = bf ? polygonFeatureToCells(bf, resolution) : new Set<string>();
-    return { bufferFeature: bf, cells: cs };
-  }, [corridorCoords, bufferMeters, resolution]);
+  // --- Web Worker lifecycle ---
+  const workerRef = useRef<Worker | null>(null);
+  const reqId = useRef(0);
+  const [res, setRes] = useState<WorkerResult>(EMPTY);
 
-  const areaKm2 = useMemo(() => corridorAreaKm2(cells), [cells]);
+  useEffect(() => {
+    const worker = new Worker(
+      new URL('../workers/pipeline.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    worker.onmessage = (e: MessageEvent<WorkerResult & { id: number }>) => {
+      if (e.data.id !== reqId.current) return; // ignore stale results
+      const { bufferFeature, cells, pickups, stats } = e.data;
+      setRes({ bufferFeature, cells, pickups, stats });
+    };
+    workerRef.current = worker;
+    return () => worker.terminate();
+  }, []);
 
-  const { pickups, stats } = useMemo(
-    () =>
-      classifyPickups({
-        points: PICKUPS,
-        cells,
-        bufferFeature,
-        resolution,
-        routeCoords: corridorCoords,
-        zones: ZONES,
-        cellCount: cells.size,
-        areaKm2,
-        routeKm: totalMeters / 1000,
-      }),
-    [cells, bufferFeature, resolution, corridorCoords, areaKm2, totalMeters]
-  );
+  // Dispatch a recompute whenever the corridor or its parameters change.
+  useEffect(() => {
+    const id = ++reqId.current;
+    workerRef.current?.postMessage({
+      id,
+      corridorCoords,
+      bufferMeters,
+      resolution,
+      routeKm: totalMeters / 1000,
+    });
+  }, [corridorCoords, bufferMeters, resolution, totalMeters]);
 
-  const zones = useMemo(() => zoneStats(pickups, ZONES), [pickups]);
-
+  const cells = useMemo(() => new Set(res.cells), [res.cells]);
   const hexes = useMemo(
     () => (showH3 ? cellsToLeafletHexes(cells) : []),
     [cells, showH3]
   );
+  const zones = useMemo(() => zoneStats(res.pickups, ZONES), [res.pickups]);
 
   return {
     coords,
     totalMeters,
     corridorCoords,
-    bufferFeature,
+    bufferFeature: res.bufferFeature,
     cells,
     hexes,
-    pickups,
-    stats,
+    pickups: res.pickups,
+    stats: res.stats,
     zones,
   };
 }

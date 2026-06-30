@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Move3d, Pencil } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import MapView from './MapView';

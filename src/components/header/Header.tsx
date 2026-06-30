@@ -1,7 +1,7 @@
-import { Search, Sun, Moon, Keyboard, Hexagon } from 'lucide-react';
+import { Search, Sun, Moon, Keyboard, Hexagon, Activity, ScrollText } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useFps } from '@/hooks/useFps';
-import { formatMs } from '@/utils/helpers';
+import { cn, formatMs } from '@/utils/helpers';
 import Segmented from '@/components/ui/Segmented';
 import type { ViewMode } from '@/types';
 
@@ -15,6 +15,7 @@ export default function Header({ processingMs }: { processingMs: number }) {
   const search = useStore((s) => s.searchQuery);
   const setSearch = useStore((s) => s.setSearch);
   const togglePanel = useStore((s) => s.togglePanel);
+  const panels = useStore((s) => s.panels);
 
   return (
     <header className="relative z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-elevated px-4">
@@ -76,6 +77,26 @@ export default function Header({ processingMs }: { processingMs: number }) {
         />
       </div>
 
+      <button
+        onClick={() => togglePanel('performance')}
+        title="Performance panel (P)"
+        className={cn(
+          'rounded-lg border border-border bg-surface-2 p-2 transition-colors',
+          panels.performance ? 'text-primary' : 'text-muted hover:text-text'
+        )}
+      >
+        <Activity size={16} />
+      </button>
+      <button
+        onClick={() => togglePanel('eventLog')}
+        title="Event log (E)"
+        className={cn(
+          'rounded-lg border border-border bg-surface-2 p-2 transition-colors',
+          panels.eventLog ? 'text-primary' : 'text-muted hover:text-text'
+        )}
+      >
+        <ScrollText size={16} />
+      </button>
       <button
         onClick={() => togglePanel('shortcuts')}
         title="Keyboard shortcuts (?)"
