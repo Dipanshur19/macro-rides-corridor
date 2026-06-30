@@ -58,7 +58,7 @@ export const TILES = {
 export const DECK_INITIAL_VIEW = {
   longitude: MAP_CENTER[1],
   latitude: MAP_CENTER[0],
-  zoom: 11.5,
-  pitch: 50,
-  bearing: -18,
+  zoom: 11,
+  pitch: 54,
+  bearing: -22,
 };

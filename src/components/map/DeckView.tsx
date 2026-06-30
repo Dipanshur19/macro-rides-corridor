@@ -1,41 +1,58 @@
 import { useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { TileLayer, H3HexagonLayer } from '@deck.gl/geo-layers';
-import { BitmapLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { BitmapLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
 import { useStore } from '@/store/useStore';
 import { DECK_INITIAL_VIEW, TILES } from '@/constants/config';
 import { DECK_COLORS, MAP_COLORS } from '@/constants/palette';
 import { hexToRgb } from '@/utils/helpers';
+import { cellFor } from '@/services/h3Service';
 import { pointAtDistance } from '@/services/routeService';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
 
 type RGBA = [number, number, number, number];
 
-interface HexDatum {
+// Coarse resolution for the city-scale 3D demand field (chunky, visible columns).
+const DEMAND_RES = 7;
+
+interface DemandDatum {
   hex: string;
+  count: number;
   eligible: number;
+}
+
+const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+function ramp(from: string, to: string, t: number, alpha: number): RGBA {
+  const a = hexToRgb(from);
+  const b = hexToRgb(to);
+  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t), alpha];
 }
 
 export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   const theme = useStore((s) => s.theme);
-  const showH3 = useStore((s) => s.layers.h3);
-  const showCorridor = useStore((s) => s.layers.corridor);
+  const showHexes = useStore((s) => s.layers.h3 || s.layers.corridor);
   const showPickups = useStore((s) => s.layers.pickups);
   const showIneligible = useStore((s) => s.layers.ineligible);
   const showRoute = useStore((s) => s.layers.route);
-  // snapped -> driver column updates every 25 m (cheap in 3D)
   const snapped = useStore((s) => Math.round(s.progressMeters / 25) * 25);
 
   const tile = theme === 'dark' ? TILES.dark : TILES.light;
 
-  // Aggregate eligible pickups per corridor cell -> extrusion height.
-  const hexData = useMemo<HexDatum[]>(() => {
-    const counts = new Map<string, number>();
+  // City-scale demand field: aggregate ALL pickups into coarse H3 cells, and
+  // track how many are currently eligible so the corridor "lights up" green.
+  const { demand, maxCount } = useMemo(() => {
+    const m = new Map<string, DemandDatum>();
     for (const p of pipeline.pickups) {
-      if (p.eligible) counts.set(p.cell, (counts.get(p.cell) ?? 0) + 1);
+      const hex = cellFor(p.lat, p.lng, DEMAND_RES);
+      const cur = m.get(hex) ?? { hex, count: 0, eligible: 0 };
+      cur.count++;
+      if (p.eligible) cur.eligible++;
+      m.set(hex, cur);
     }
-    return [...pipeline.cells].map((hex) => ({ hex, eligible: counts.get(hex) ?? 0 }));
-  }, [pipeline.cells, pipeline.pickups]);
+    let max = 1;
+    for (const d of m.values()) max = Math.max(max, d.count);
+    return { demand: [...m.values()], maxCount: max };
+  }, [pipeline.pickups]);
 
   const pickupData = useMemo(
     () =>
@@ -46,8 +63,8 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
             ? [...hexToRgb(MAP_COLORS.eligible), 255]
             : p.candidate
             ? [...hexToRgb(MAP_COLORS.candidate), 235]
-            : [...hexToRgb(MAP_COLORS.ineligible), 170];
-          return { position: [p.lng, p.lat] as [number, number], color, r: p.eligible ? 55 : 38 };
+            : [...hexToRgb(MAP_COLORS.ineligible), 150];
+          return { position: [p.lng, p.lat] as [number, number], color };
         }),
     [pipeline.pickups, showIneligible]
   );
@@ -56,6 +73,8 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
     () => (pipeline.coords.length >= 2 ? pointAtDistance(pipeline.coords, snapped) : null),
     [pipeline.coords, snapped]
   );
+
+  const driverHeight = maxCount * 220 + 2600;
 
   const layers = [
     new TileLayer({
@@ -78,60 +97,68 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
         });
       },
     }),
-    showH3 || showCorridor
-      ? new H3HexagonLayer<HexDatum>({
-          id: 'corridor-hex',
-          data: hexData,
+
+    showHexes
+      ? new H3HexagonLayer<DemandDatum>({
+          id: 'demand-hex',
+          data: demand,
           extruded: true,
           getHexagon: (d) => d.hex,
-          getElevation: (d) => 60 + d.eligible * 140,
+          getElevation: (d) => 120 + d.count * 220 + d.eligible * 320,
           elevationScale: 1,
           getFillColor: (d) =>
-            d.eligible > 0 ? DECK_COLORS.eligibleFill : DECK_COLORS.corridorFill,
-          getLineColor: [255, 255, 255, 40],
+            d.eligible > 0
+              ? ramp('#15803d', '#4ade80', Math.min(1, d.eligible / Math.max(1, d.count)), 225)
+              : ramp('#1e3a8a', '#22d3ee', Math.min(1, d.count / maxCount), 170),
+          getLineColor: [255, 255, 255, 35],
           lineWidthMinPixels: 1,
           wireframe: true,
           pickable: true,
-          material: { ambient: 0.6, diffuse: 0.6, shininess: 32 },
-          opacity: 0.85,
+          material: { ambient: 0.65, diffuse: 0.6, shininess: 40 },
+          opacity: 0.9,
+          updateTriggers: { getFillColor: [maxCount], getElevation: [] },
         })
       : null,
+
     showRoute && pipeline.coords.length >= 2
       ? new PathLayer<{ path: [number, number][] }>({
           id: 'route',
           data: [{ path: pipeline.coords as [number, number][] }],
           getPath: (d) => d.path,
           getColor: DECK_COLORS.route,
-          getWidth: 5,
+          getWidth: 6,
           widthMinPixels: 3,
           capRounded: true,
           jointRounded: true,
         })
       : null,
+
     showPickups
-      ? new ScatterplotLayer<{ position: [number, number]; color: RGBA; r: number }>({
+      ? new ScatterplotLayer<{ position: [number, number]; color: RGBA }>({
           id: 'pickups',
           data: pickupData,
           getPosition: (d) => d.position,
           getFillColor: (d) => d.color,
-          getRadius: (d) => d.r,
+          getRadius: 45,
           radiusMinPixels: 2,
-          radiusMaxPixels: 7,
+          radiusMaxPixels: 6,
           stroked: false,
         })
       : null,
+
     driverPos
-      ? new ScatterplotLayer<{ position: [number, number] }>({
+      ? new ColumnLayer<{ position: [number, number] }>({
           id: 'driver',
           data: [{ position: driverPos as [number, number] }],
+          diskResolution: 6,
+          radius: 140,
+          extruded: true,
           getPosition: (d) => d.position,
+          getElevation: driverHeight,
+          elevationScale: 1,
           getFillColor: DECK_COLORS.driver,
-          getLineColor: [255, 255, 255, 255],
-          lineWidthMinPixels: 2,
-          stroked: true,
-          getRadius: 90,
-          radiusMinPixels: 6,
-          radiusMaxPixels: 14,
+          opacity: 0.95,
+          updateTriggers: { getElevation: [driverHeight] },
         })
       : null,
   ].filter(Boolean);
