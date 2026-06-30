@@ -1,14 +1,14 @@
-import { Pencil, Check, X } from 'lucide-react';
+import { Route as RouteIcon, Pencil, Check, X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { ROUTES } from '@/data/routes';
 import Card from '@/components/ui/Card';
 import { cn } from '@/utils/helpers';
 
-const catMeta: Record<string, { cls: string; emoji: string }> = {
-  Business: { cls: 'text-primary border-primary/40 bg-primary/10', emoji: '💼' },
-  Residential: { cls: 'text-success border-success/40 bg-success/10', emoji: '🏘️' },
-  Airport: { cls: 'text-warning border-warning/40 bg-warning/10', emoji: '✈️' },
-  Custom: { cls: 'text-accent border-accent/40 bg-accent/10', emoji: '✏️' },
+const catMeta: Record<string, { cls: string }> = {
+  Business: { cls: 'text-primary border-primary/40 bg-primary/10' },
+  Residential: { cls: 'text-success border-success/40 bg-success/10' },
+  Airport: { cls: 'text-warning border-warning/40 bg-warning/10' },
+  Custom: { cls: 'text-accent border-accent/40 bg-accent/10' },
 };
 
 export default function RouteControl() {
@@ -25,7 +25,7 @@ export default function RouteControl() {
   const category = customRoute ? 'Custom' : active?.category ?? 'Business';
 
   return (
-    <Card title="Driver Route" icon={<span>🚗</span>}>
+    <Card title="Driver Route" icon={<RouteIcon size={13} />}>
       <select
         value={customRoute ? 'custom' : routeId}
         onChange={(e) => setRoute(e.target.value)}
@@ -47,7 +47,7 @@ export default function RouteControl() {
             catMeta[category]?.cls
           )}
         >
-          {catMeta[category]?.emoji} {category}
+          {category}
         </span>
         {!drawing ? (
           <button

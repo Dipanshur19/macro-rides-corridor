@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Gauge } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { SPEED_MULTIPLIERS } from '@/constants/config';
 import Card from '@/components/ui/Card';
@@ -23,7 +23,7 @@ export default function SimulationControl({ totalMeters }: { totalMeters: number
   const atEnd = progress >= totalMeters - 0.5;
 
   return (
-    <Card title="Live Simulation" icon={<span>🎮</span>}>
+    <Card title="Live Simulation" icon={<Gauge size={13} />}>
       <div className="mb-3 flex gap-2">
         <button
           onClick={togglePlay}

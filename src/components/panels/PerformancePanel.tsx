@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
+import { Activity } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import FloatingPanel from '@/components/ui/FloatingPanel';
-import { formatMs, formatNumber } from '@/utils/helpers';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
+import { formatNumber } from '@/utils/helpers';
 import type { PipelineStats } from '@/types';
 
 export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
@@ -16,7 +19,7 @@ export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
   return (
     <FloatingPanel
       title="Performance"
-      icon={<span>⚡</span>}
+      icon={<Activity size={13} />}
       onClose={() => close('performance')}
       width={300}
     >
@@ -26,11 +29,13 @@ export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
             <div key={s.label}>
               <div className="mb-1 flex justify-between text-2xs">
                 <span className="text-muted">{s.label}</span>
-                <span className="font-mono font-semibold">{formatNumber(s.value)}</span>
+                <span className="font-mono font-semibold">
+                  <AnimatedNumber value={s.value} />
+                </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
                 <div
-                  className="h-full rounded-full transition-[width] duration-300"
+                  className="h-full rounded-full transition-[width] duration-500"
                   style={{ width: `${(s.value / max) * 100}%`, background: s.color }}
                 />
               </div>
@@ -39,9 +44,18 @@ export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
         </div>
 
         <div className="grid grid-cols-3 gap-2 border-t border-border pt-3">
-          <Metric label="Process" value={formatMs(stats.processingMs)} accent />
-          <Metric label="H3 cells" value={formatNumber(stats.cellCount)} />
-          <Metric label="Area km²" value={stats.areaKm2.toFixed(2)} />
+          <Metric
+            label="Process"
+            accent
+            value={
+              <>
+                <AnimatedNumber value={stats.processingMs} decimals={1} locale={false} />
+                <span className="ml-0.5 text-2xs font-semibold opacity-70">ms</span>
+              </>
+            }
+          />
+          <Metric label="H3 cells" value={<AnimatedNumber value={stats.cellCount} />} />
+          <Metric label="Area km²" value={<AnimatedNumber value={stats.areaKm2} decimals={2} />} />
         </div>
 
         <p className="text-2xs leading-relaxed text-faint">
@@ -53,7 +67,7 @@ export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
   );
 }
 
-function Metric({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Metric({ label, value, accent }: { label: string; value: ReactNode; accent?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-surface-2/60 px-2 py-1.5 text-center">
       <div className={`font-mono text-sm font-bold ${accent ? 'text-primary' : 'text-text'}`}>

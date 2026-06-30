@@ -9,7 +9,7 @@ import PerformancePanel from '@/components/panels/PerformancePanel';
 import EventLog from '@/components/panels/EventLog';
 import H3Inspector from '@/components/panels/H3Inspector';
 import ShortcutsModal from '@/components/panels/ShortcutsModal';
-import { formatNumber } from '@/utils/helpers';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
 
 export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
@@ -69,11 +69,11 @@ export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
             </span>
             <span className="h-3 w-px bg-border" />
             <span>
-              Eligible: <b className="text-success">{formatNumber(pipeline.stats.eligible)}</b>
+              Eligible: <b className="text-success"><AnimatedNumber value={pipeline.stats.eligible} /></b>
             </span>
             <span className="h-3 w-px bg-border" />
             <span>
-              H3 cells: <b className="text-text">{formatNumber(pipeline.stats.cellCount)}</b>
+              H3 cells: <b className="text-text"><AnimatedNumber value={pipeline.stats.cellCount} /></b>
             </span>
           </div>
         </div>
