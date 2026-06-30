@@ -1,4 +1,3 @@
-import { Activity } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import FloatingPanel from '@/components/ui/FloatingPanel';
 import { formatMs, formatNumber } from '@/utils/helpers';
@@ -17,7 +16,7 @@ export default function PerformancePanel({ stats }: { stats: PipelineStats }) {
   return (
     <FloatingPanel
       title="Performance"
-      icon={<Activity size={13} />}
+      icon={<span>⚡</span>}
       onClose={() => close('performance')}
       width={300}
     >

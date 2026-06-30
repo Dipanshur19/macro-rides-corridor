@@ -1,4 +1,3 @@
-import { Spline } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import Card from '@/components/ui/Card';
 import Slider from '@/components/ui/Slider';
@@ -25,7 +24,7 @@ export default function CorridorControl() {
   const setLookAhead = useStore((s) => s.setLookAhead);
 
   return (
-    <Card title="Corridor Parameters" icon={<Spline size={13} />}>
+    <Card title="Corridor Parameters" icon={<span>📐</span>}>
       <Slider
         label="Buffer (half-width)"
         value={bufferMeters}

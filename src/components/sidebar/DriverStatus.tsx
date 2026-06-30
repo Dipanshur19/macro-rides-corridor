@@ -1,4 +1,3 @@
-import { Navigation } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import Card from '@/components/ui/Card';
 import { cn, formatKm } from '@/utils/helpers';
@@ -17,7 +16,7 @@ export default function DriverStatus({
   const pct = totalMeters > 0 ? Math.min(100, (progress / totalMeters) * 100) : 0;
 
   return (
-    <Card title="Driver Status" icon={<Navigation size={13} />}>
+    <Card title="Driver Status" icon={<span>🧭</span>}>
       <div className="grid grid-cols-2 gap-2.5">
         <Field
           label="Status"

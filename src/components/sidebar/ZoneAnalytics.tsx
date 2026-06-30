@@ -1,10 +1,9 @@
-import { PieChart } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import type { ZoneStat } from '@/types';
 
 export default function ZoneAnalytics({ zones }: { zones: ZoneStat[] }) {
   return (
-    <Card title="Zone Analytics" icon={<PieChart size={13} />}>
+    <Card title="Zone Analytics" icon={<span>📊</span>}>
       <div className="space-y-3">
         {zones.map((z) => {
           const pct = z.total > 0 ? (z.eligible / z.total) * 100 : 0;

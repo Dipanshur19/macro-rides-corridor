@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Hexagon } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import FloatingPanel from '@/components/ui/FloatingPanel';
 import { inspectCell } from '@/services/h3Service';
@@ -17,7 +16,7 @@ export default function H3Inspector({ cells }: { cells: Set<string> }) {
   return (
     <FloatingPanel
       title="H3 Inspector"
-      icon={<Hexagon size={13} />}
+      icon={<span>🔷</span>}
       onClose={() => {
         selectCell(null);
         close('h3Inspector');

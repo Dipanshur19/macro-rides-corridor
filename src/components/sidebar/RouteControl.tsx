@@ -1,14 +1,14 @@
-import { Route as RouteIcon, Pencil, Check, X } from 'lucide-react';
+import { Pencil, Check, X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { ROUTES } from '@/data/routes';
 import Card from '@/components/ui/Card';
 import { cn } from '@/utils/helpers';
 
-const catColor: Record<string, string> = {
-  Business: 'text-primary border-primary/40 bg-primary/10',
-  Residential: 'text-success border-success/40 bg-success/10',
-  Airport: 'text-warning border-warning/40 bg-warning/10',
-  Custom: 'text-accent border-accent/40 bg-accent/10',
+const catMeta: Record<string, { cls: string; emoji: string }> = {
+  Business: { cls: 'text-primary border-primary/40 bg-primary/10', emoji: '💼' },
+  Residential: { cls: 'text-success border-success/40 bg-success/10', emoji: '🏘️' },
+  Airport: { cls: 'text-warning border-warning/40 bg-warning/10', emoji: '✈️' },
+  Custom: { cls: 'text-accent border-accent/40 bg-accent/10', emoji: '✏️' },
 };
 
 export default function RouteControl() {
@@ -25,7 +25,7 @@ export default function RouteControl() {
   const category = customRoute ? 'Custom' : active?.category ?? 'Business';
 
   return (
-    <Card title="Driver Route" icon={<RouteIcon size={13} />}>
+    <Card title="Driver Route" icon={<span>🚗</span>}>
       <select
         value={customRoute ? 'custom' : routeId}
         onChange={(e) => setRoute(e.target.value)}
@@ -44,10 +44,10 @@ export default function RouteControl() {
         <span
           className={cn(
             'rounded-md border px-2 py-0.5 text-2xs font-semibold',
-            catColor[category]
+            catMeta[category]?.cls
           )}
         >
-          {category}
+          {catMeta[category]?.emoji} {category}
         </span>
         {!drawing ? (
           <button

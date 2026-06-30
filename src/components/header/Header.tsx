@@ -33,11 +33,9 @@ export default function Header({ processingMs }: { processingMs: number }) {
 
       {/* status pill */}
       <div className="hidden items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 sm:flex">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            isPlaying ? 'animate-pulse bg-success' : 'bg-faint'
-          }`}
-        />
+        <span className={isPlaying ? 'animate-pulse text-xs leading-none' : 'text-xs leading-none'}>
+          {isPlaying ? '🟢' : '⚪'}
+        </span>
         <span className="text-xs font-medium">
           {isPlaying ? 'Live simulation' : 'Standby'}
         </span>

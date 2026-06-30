@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw, Gauge } from 'lucide-react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { SPEED_MULTIPLIERS } from '@/constants/config';
 import Card from '@/components/ui/Card';
@@ -23,18 +23,18 @@ export default function SimulationControl({ totalMeters }: { totalMeters: number
   const atEnd = progress >= totalMeters - 0.5;
 
   return (
-    <Card title="Live Simulation" icon={<Gauge size={13} />}>
+    <Card title="Live Simulation" icon={<span>🎮</span>}>
       <div className="mb-3 flex gap-2">
         <button
           onClick={togglePlay}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-white transition-transform duration-100 hover:bg-primary-hover active:scale-[0.97]"
         >
           {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           {isPlaying ? 'Pause' : atEnd ? 'Replay' : 'Play'}
         </button>
         <button
           onClick={reset}
-          className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-text"
+          className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm font-medium text-muted transition-transform duration-100 hover:text-text active:scale-[0.97]"
         >
           <RotateCcw size={15} />
         </button>

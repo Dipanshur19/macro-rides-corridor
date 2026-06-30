@@ -1,16 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ScrollText, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import FloatingPanel from '@/components/ui/FloatingPanel';
 import { formatClock } from '@/utils/helpers';
 import type { EventType } from '@/types';
 
-const dot: Record<EventType, string> = {
-  info: 'bg-primary',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  zone: 'bg-accent',
-  system: 'bg-faint',
+const emoji: Record<EventType, string> = {
+  info: '💡',
+  success: '✅',
+  warning: '⚠️',
+  zone: '📍',
+  system: '⚙️',
 };
 
 export default function EventLog() {
@@ -21,7 +21,7 @@ export default function EventLog() {
   return (
     <FloatingPanel
       title="Live Event Log"
-      icon={<ScrollText size={13} />}
+      icon={<span>📡</span>}
       onClose={() => close('eventLog')}
       width={300}
     >
@@ -48,7 +48,7 @@ export default function EventLog() {
               transition={{ duration: 0.2 }}
               className="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2/60"
             >
-              <span className={`mt-1 h-1.5 w-1.5 flex-none rounded-full ${dot[e.type]}`} />
+              <span className="mt-px text-xs leading-none">{emoji[e.type]}</span>
               <span className="flex-1 text-2xs leading-snug">{e.message}</span>
               <span className="flex-none font-mono text-[10px] text-faint">
                 {formatClock(e.time)}

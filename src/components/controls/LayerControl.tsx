@@ -1,4 +1,3 @@
-import { Layers } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import Card from '@/components/ui/Card';
 import Toggle from '@/components/ui/Toggle';
@@ -19,7 +18,7 @@ export default function LayerControl() {
   const layers = useStore((s) => s.layers);
   const toggleLayer = useStore((s) => s.toggleLayer);
   return (
-    <Card title="Layers" icon={<Layers size={13} />}>
+    <Card title="Layers" icon={<span>🗂️</span>}>
       {ITEMS.map((it) => (
         <Toggle
           key={it.key}
