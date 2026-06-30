@@ -11,6 +11,7 @@ import { ZONES } from '@/data/zones';
 import Header from '@/components/header/Header';
 import Sidebar from '@/components/sidebar/Sidebar';
 import MapArea from '@/components/map/MapArea';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 export default function Dashboard() {
   useSimulation();
@@ -34,7 +35,9 @@ export default function Dashboard() {
       <Header processingMs={pipeline.stats.processingMs} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <Sidebar pipeline={pipeline} driverZone={driverZone} />
-        <MapArea pipeline={pipeline} />
+        <ErrorBoundary label="The map failed to render">
+          <MapArea pipeline={pipeline} />
+        </ErrorBoundary>
       </div>
     </div>
   );

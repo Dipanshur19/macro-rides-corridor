@@ -1,23 +1,38 @@
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 
-/** Binds global keyboard shortcuts (ignored while typing in inputs). */
+/**
+ * Binds global keyboard shortcuts.
+ * Uses the CAPTURE phase on window so the shortcuts fire even when the
+ * Leaflet / deck.gl canvas has focus (those libraries attach their own
+ * key handlers on the canvas during the bubble phase).
+ */
 export function useKeyboardShortcuts() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        if (e.key === 'Escape') target.blur();
+      // Never hijack browser/OS combos (Cmd+R, Ctrl+L, etc.).
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+      ) {
+        if (e.key === 'Escape') t.blur();
         return;
       }
+
       const s = useStore.getState();
-      switch (e.key) {
-        case ' ':
-          e.preventDefault();
-          s.togglePlay();
-          break;
+
+      // Space (play/pause) — match both key and code for layout robustness.
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        s.togglePlay();
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
         case 'r':
-        case 'R':
           s.reset();
           break;
         case '1':
@@ -30,35 +45,27 @@ export function useKeyboardShortcuts() {
           s.setMultiplier(5);
           break;
         case 'h':
-        case 'H':
           s.toggleLayer('h3');
           break;
         case 'c':
-        case 'C':
           s.toggleLayer('corridor');
           break;
         case 'z':
-        case 'Z':
           s.toggleLayer('zones');
           break;
         case 'm':
-        case 'M':
           s.toggleViewMode();
           break;
         case 't':
-        case 'T':
           s.toggleTheme();
           break;
         case 'f':
-        case 'F':
           s.toggleFollow();
           break;
         case 'e':
-        case 'E':
           s.togglePanel('eventLog');
           break;
         case 'p':
-        case 'P':
           s.togglePanel('performance');
           break;
         case '/':
@@ -70,7 +77,8 @@ export function useKeyboardShortcuts() {
           break;
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
   }, []);
 }
