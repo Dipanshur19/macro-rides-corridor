@@ -27,7 +27,7 @@ export default function SimulationControl({ totalMeters }: { totalMeters: number
       <div className="mb-3 flex gap-2">
         <button
           onClick={togglePlay}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-white transition-transform duration-100 hover:bg-primary-hover active:scale-[0.97]"
+          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold"
         >
           {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           {isPlaying ? 'Pause' : atEnd ? 'Replay' : 'Play'}

@@ -38,7 +38,7 @@ export default function LoadingScreen({ dark }: { dark: boolean }) {
           transition={{ delay: 0.15, duration: 0.5 }}
           className="flex flex-col items-center"
         >
-          <div className="text-2xl font-extrabold tracking-tight text-text">
+          <div className="gradient-text text-2xl font-extrabold tracking-tight">
             Macro Rides
           </div>
           <div className="mt-1 text-xs font-medium uppercase tracking-[0.25em] text-muted">

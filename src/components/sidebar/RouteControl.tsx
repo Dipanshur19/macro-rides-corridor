@@ -61,7 +61,7 @@ export default function RouteControl() {
             <button
               onClick={finishDraw}
               disabled={draftCount < 2}
-              className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+              className="btn-primary flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-40"
             >
               <Check size={13} /> Finish ({draftCount})
             </button>

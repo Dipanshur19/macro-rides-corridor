@@ -13,7 +13,7 @@ export default function MapControls() {
       <button
         onClick={requestRecenter}
         title="Recenter on route"
-        className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-surface/90 text-muted shadow-panel backdrop-blur-md transition-colors hover:text-text"
+        className="glass card-hi grid h-9 w-9 place-items-center rounded-lg text-muted transition-colors hover:text-text"
       >
         <LocateFixed size={17} />
       </button>
@@ -21,8 +21,8 @@ export default function MapControls() {
         onClick={toggleFollow}
         title="Follow driver (F)"
         className={cn(
-          'grid h-9 w-9 place-items-center rounded-lg border bg-surface/90 shadow-panel backdrop-blur-md transition-colors',
-          follow ? 'border-primary text-primary' : 'border-border text-muted hover:text-text'
+          'glass card-hi grid h-9 w-9 place-items-center rounded-lg transition-colors',
+          follow ? 'text-primary' : 'text-muted hover:text-text'
         )}
       >
         <Crosshair size={17} />

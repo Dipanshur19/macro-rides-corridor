@@ -28,7 +28,7 @@ export default function FloatingPanel({
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       style={{ width }}
       className={cn(
-        'pointer-events-auto overflow-hidden rounded-2xl border border-border bg-surface/90 shadow-panel backdrop-blur-md',
+        'glass card-hi pointer-events-auto overflow-hidden rounded-2xl',
         className
       )}
     >

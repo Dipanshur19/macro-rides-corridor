@@ -15,7 +15,7 @@ export default function Sidebar({
   driverZone: string | null;
 }) {
   return (
-    <aside className="z-20 flex w-full flex-none flex-col overflow-y-auto border-b border-border bg-surface md:max-h-none md:w-[330px] md:border-b-0 md:border-r max-h-[44vh]">
+    <aside className="elev-gradient z-20 flex w-full flex-none flex-col overflow-y-auto border-b border-border md:max-h-none md:w-[330px] md:border-b-0 md:border-r max-h-[44vh]">
       <RouteControl />
       <SimulationControl totalMeters={pipeline.totalMeters} />
       <DriverStatus totalMeters={pipeline.totalMeters} driverZone={driverZone} />

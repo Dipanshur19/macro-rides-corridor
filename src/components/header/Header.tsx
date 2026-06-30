@@ -17,14 +17,14 @@ export default function Header({ processingMs }: { processingMs: number }) {
   const togglePanel = useStore((s) => s.togglePanel);
 
   return (
-    <header className="z-30 flex h-14 items-center gap-3 border-b border-border bg-surface px-4">
+    <header className="relative z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-elevated px-4">
       {/* brand */}
       <div className="flex items-center gap-2.5">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-white">
+        <div className="brand-mark grid h-8 w-8 place-items-center rounded-lg text-white">
           <Hexagon size={18} fill="currentColor" />
         </div>
         <div className="leading-tight">
-          <div className="text-sm font-bold tracking-tight">Macro Rides</div>
+          <div className="gradient-text text-sm font-bold tracking-tight">Macro Rides</div>
           <div className="text-2xs text-muted">Dispatch Console</div>
         </div>
       </div>
@@ -90,6 +90,8 @@ export default function Header({ processingMs }: { processingMs: number }) {
       >
         {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
       </button>
+
+      <div className="accent-bar pointer-events-none absolute inset-x-0 bottom-0 h-px opacity-70" />
     </header>
   );
 }

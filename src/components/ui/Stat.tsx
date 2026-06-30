@@ -24,7 +24,7 @@ export default function Stat({ value, label, tone = 'default', mono, decimals, s
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="rounded-xl border border-border bg-surface-2/60 px-3 py-2.5 hover:border-border-strong"
+      className="lift card-hi rounded-xl border border-border bg-surface-2/60 px-3 py-2.5 hover:border-border-strong"
     >
       <div className={cn('text-xl font-bold leading-none', toneMap[tone], mono && 'font-mono')}>
         {typeof value === 'number' ? <AnimatedNumber value={value} decimals={decimals} /> : value}

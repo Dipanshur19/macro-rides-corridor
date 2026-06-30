@@ -29,12 +29,12 @@ export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
         {/* top-center hints */}
         <div className="absolute left-1/2 top-3 flex -translate-x-1/2 flex-col items-center gap-2">
           {drawing && (
-            <div className="pointer-events-none flex items-center gap-2 rounded-full border border-primary bg-surface/90 px-4 py-1.5 text-xs shadow-panel backdrop-blur-md">
+            <div className="glass pointer-events-none flex items-center gap-2 rounded-full border border-primary px-4 py-1.5 text-xs">
               <Pencil size={13} /> Click to add waypoints — {draftCount} added
             </div>
           )}
           {viewMode === '3d' && (
-            <div className="pointer-events-none flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-2xs text-muted shadow-panel backdrop-blur-md">
+            <div className="glass card-hi pointer-events-none flex items-center gap-2 rounded-full px-4 py-1.5 text-2xs text-muted">
               <Move3d size={13} /> Drag to rotate · Ctrl/Right-drag to tilt · Scroll to zoom
             </div>
           )}
@@ -60,7 +60,7 @@ export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
 
         {/* bottom-center status pill */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-          <div className="flex items-center gap-4 rounded-xl border border-border bg-surface/90 px-4 py-2 text-2xs text-muted shadow-panel backdrop-blur-md">
+          <div className="glass card-hi flex items-center gap-4 rounded-xl px-4 py-2 text-2xs text-muted">
             <span>
               Mode:{' '}
               <b className="text-text">

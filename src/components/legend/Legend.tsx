@@ -12,7 +12,7 @@ const ITEMS: { c: string; label: string; ring?: boolean }[] = [
 
 export default function Legend() {
   return (
-    <div className="pointer-events-auto rounded-xl border border-border bg-surface/90 p-3 shadow-panel backdrop-blur-md">
+    <div className="glass card-hi pointer-events-auto rounded-xl p-3">
       <div className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">
         Legend
       </div>
