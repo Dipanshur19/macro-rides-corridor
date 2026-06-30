@@ -49,6 +49,10 @@ export function useKeyboardShortcuts() {
         case 'T':
           s.toggleTheme();
           break;
+        case 'f':
+        case 'F':
+          s.toggleFollow();
+          break;
         case 'e':
         case 'E':
           s.togglePanel('eventLog');

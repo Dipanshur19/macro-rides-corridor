@@ -1,9 +1,12 @@
-import { MapContainer, TileLayer, CircleMarker, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polyline, useMap } from 'react-leaflet';
+import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { MAP_CENTER, MAP_ZOOM, TILES } from '@/constants/config';
 import { MAP_COLORS } from '@/constants/palette';
 import { toLatLngs } from '@/utils/geometry';
+import { pointAtDistance } from '@/services/routeService';
 import type { SpatialPipeline } from '@/hooks/useSpatialPipeline';
+import type { LngLat } from '@/types';
 
 import MapController from './MapController';
 import ZonesLayer from './layers/ZonesLayer';
@@ -13,6 +16,22 @@ import H3GridLayer from './layers/H3GridLayer';
 import PickupLayer from './layers/PickupLayer';
 import DriverMarker from './layers/DriverMarker';
 import HeatmapLayer from './layers/HeatmapLayer';
+
+/** Gently pans the 2D map to keep the driver centred while following + playing. */
+function Follow2D({ coords }: { coords: LngLat[] }) {
+  const map = useMap();
+  const follow = useStore((s) => s.followDriver);
+  const isPlaying = useStore((s) => s.isPlaying);
+  const snapped = useStore((s) => Math.round(s.progressMeters / 25) * 25);
+
+  useEffect(() => {
+    if (!follow || !isPlaying || coords.length < 2) return;
+    const [lng, lat] = pointAtDistance(coords, snapped);
+    map.panTo([lat, lng], { animate: true, duration: 0.5, noMoveStart: true });
+  }, [snapped, follow, isPlaying, coords, map]);
+
+  return null;
+}
 
 export default function MapView({ pipeline }: { pipeline: SpatialPipeline }) {
   const theme = useStore((s) => s.theme);
@@ -31,6 +50,7 @@ export default function MapView({ pipeline }: { pipeline: SpatialPipeline }) {
       <TileLayer key={theme} url={tile.url} attribution={TILES.attribution} />
 
       <MapController coords={pipeline.coords} />
+      <Follow2D coords={pipeline.coords} />
 
       <HeatmapLayer />
       <ZonesLayer />

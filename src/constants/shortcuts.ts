@@ -11,6 +11,7 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: 'C', label: 'Toggle 350 m corridor' },
   { keys: 'Z', label: 'Toggle service zones' },
   { keys: 'M', label: 'Switch 2D / 3D map' },
+  { keys: 'F', label: 'Toggle camera follow' },
   { keys: 'T', label: 'Toggle light / dark theme' },
   { keys: 'E', label: 'Toggle event log' },
   { keys: 'P', label: 'Toggle performance panel' },

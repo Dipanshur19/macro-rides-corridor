@@ -36,6 +36,7 @@ export interface StoreState {
   // view / theme
   viewMode: ViewMode;
   theme: Theme;
+  followDriver: boolean;
   // layers + panels
   layers: LayerVisibility;
   panels: Record<PanelKey, boolean>;
@@ -69,6 +70,7 @@ export interface StoreState {
   toggleViewMode: () => void;
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
+  toggleFollow: () => void;
 
   toggleLayer: (k: keyof LayerVisibility) => void;
   togglePanel: (k: PanelKey) => void;
@@ -120,6 +122,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   viewMode: '2d',
   theme: getInitialTheme(),
+  followDriver: true,
 
   layers: initialLayers,
   panels: { performance: true, eventLog: true, h3Inspector: false, shortcuts: false },
@@ -178,6 +181,11 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   setTheme: (t) => set({ theme: t }),
   toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
+  toggleFollow: () => {
+    const next = !get().followDriver;
+    set({ followDriver: next });
+    get().pushEvent('info', `Camera follow ${next ? 'enabled' : 'disabled'}`);
+  },
 
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   togglePanel: (k) => set((s) => ({ panels: { ...s.panels, [k]: !s.panels[k] } })),

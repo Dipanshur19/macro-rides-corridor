@@ -4,6 +4,7 @@ import { SPEED_MULTIPLIERS } from '@/constants/config';
 import Card from '@/components/ui/Card';
 import Slider from '@/components/ui/Slider';
 import Segmented from '@/components/ui/Segmented';
+import Toggle from '@/components/ui/Toggle';
 import { formatKm } from '@/utils/helpers';
 
 export default function SimulationControl({ totalMeters }: { totalMeters: number }) {
@@ -16,6 +17,8 @@ export default function SimulationControl({ totalMeters }: { totalMeters: number
   const setSpeed = useStore((s) => s.setSpeed);
   const multiplier = useStore((s) => s.speedMultiplier);
   const setMultiplier = useStore((s) => s.setMultiplier);
+  const followDriver = useStore((s) => s.followDriver);
+  const toggleFollow = useStore((s) => s.toggleFollow);
 
   const atEnd = progress >= totalMeters - 0.5;
 
@@ -62,6 +65,14 @@ export default function SimulationControl({ totalMeters }: { totalMeters: number
           value={multiplier}
           onChange={setMultiplier}
           options={SPEED_MULTIPLIERS.map((m) => ({ value: m, label: `${m}x` }))}
+        />
+      </div>
+
+      <div className="mt-3 border-t border-border pt-2">
+        <Toggle
+          label="Camera follows driver"
+          checked={followDriver}
+          onChange={toggleFollow}
         />
       </div>
     </Card>

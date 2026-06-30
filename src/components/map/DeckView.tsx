@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import DeckGL from '@deck.gl/react';
 import { TileLayer, H3HexagonLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
@@ -34,7 +34,10 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   const showPickups = useStore((s) => s.layers.pickups);
   const showIneligible = useStore((s) => s.layers.ineligible);
   const showRoute = useStore((s) => s.layers.route);
-  const snapped = useStore((s) => Math.round(s.progressMeters / 25) * 25);
+  const follow = useStore((s) => s.followDriver);
+  const isPlaying = useStore((s) => s.isPlaying);
+  // Raw progress drives a buttery-smooth driver beacon + follow camera.
+  const rawProgress = useStore((s) => s.progressMeters);
 
   const tile = theme === 'dark' ? TILES.dark : TILES.light;
 
@@ -70,9 +73,18 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
   );
 
   const driverPos = useMemo(
-    () => (pipeline.coords.length >= 2 ? pointAtDistance(pipeline.coords, snapped) : null),
-    [pipeline.coords, snapped]
+    () => (pipeline.coords.length >= 2 ? pointAtDistance(pipeline.coords, rawProgress) : null),
+    [pipeline.coords, rawProgress]
   );
+
+  // Controlled camera: user drags update it; when following + playing it
+  // smoothly re-centres on the driver each frame (preserving pitch/bearing/zoom).
+  const [viewState, setViewState] = useState<Record<string, number>>(DECK_INITIAL_VIEW);
+  useEffect(() => {
+    if (follow && isPlaying && driverPos) {
+      setViewState((v) => ({ ...v, longitude: driverPos[0], latitude: driverPos[1] }));
+    }
+  }, [driverPos, follow, isPlaying]);
 
   const driverHeight = maxCount * 220 + 2600;
 
@@ -165,7 +177,8 @@ export default function DeckView({ pipeline }: { pipeline: SpatialPipeline }) {
 
   return (
     <DeckGL
-      initialViewState={DECK_INITIAL_VIEW}
+      viewState={viewState as any}
+      onViewStateChange={(e: any) => setViewState(e.viewState)}
       controller={{ dragRotate: true }}
       layers={layers as any}
       style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%' }}
