@@ -1,5 +1,7 @@
 # Macro Rides — Dispatch Console
 
+**Live demo:** [macro-rides.netlify.app](https://macro-rides.netlify.app)
+
 A production-grade dispatch operations dashboard for hyperlocal EV mobility. Given a driver's live route across **Delhi NCR**, it builds a **350 m buffer corridor**, indexes that corridor with **H3** (Uber's hexagonal spatial index), and highlights every **eligible pickup point** inside it — updating live as the driver moves. Includes a real **3D extruded-hexagon** view powered by deck.gl.
 
 Built to look and behave like an internal ops tool used by a ride-hailing/EV-mobility company.
