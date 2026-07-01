@@ -1,0 +1,13 @@
+# Netlify deployment configuration for the Vite + React build.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback: serve index.html for any route.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

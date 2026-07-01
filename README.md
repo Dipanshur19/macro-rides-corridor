@@ -120,15 +120,15 @@ npm run typecheck
 
 ---
 
-## Deployment (Vercel)
+## Deployment (Netlify)
 
 The app is a static site with no API keys or environment variables. It is
-configured for Vercel via `vercel.json` (framework `vite`, build `npm run build`,
-output `dist`).
+configured for Netlify via `netlify.toml` (build `npm run build`, publish `dist`,
+Node 20, with an SPA fallback redirect).
 
 1. Push the repo to GitHub (done).
-2. On [vercel.com](https://vercel.com), **Add New Project** and import this repo.
-3. Vercel auto-detects the Vite framework — no settings to change. Click **Deploy**.
+2. On [netlify.com](https://app.netlify.com) choose **Add new site → Import an existing project** and pick this repo.
+3. Netlify reads `netlify.toml` automatically — build command `npm run build`, publish directory `dist`. No settings to change. Click **Deploy**.
 
 Every future push to `main` redeploys automatically.
 
