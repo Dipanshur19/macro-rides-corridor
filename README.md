@@ -120,21 +120,23 @@ npm run typecheck
 
 ---
 
-## Deployment
+## Deployment (Vercel)
 
-The app is a static site (no API keys). Configs are included:
+The app is a static site with no API keys or environment variables. It is
+configured for Vercel via `vercel.json` (framework `vite`, build `npm run build`,
+output `dist`).
 
-- **Vercel** — `vercel.json` (framework `vite`, output `dist`). Import the repo and deploy.
-- **Netlify** — `netlify.toml` (build `npm run build`, publish `dist`).
-- **GitHub Pages** — `npm run build`, publish `dist/` (build uses a relative base).
+1. Push the repo to GitHub (done).
+2. On [vercel.com](https://vercel.com), **Add New Project** and import this repo.
+3. Vercel auto-detects the Vite framework — no settings to change. Click **Deploy**.
 
-A GitHub Actions workflow (`.github/workflows/deploy.yml`) verifies the build on every push.
+Every future push to `main` redeploys automatically.
 
 ---
 
 ## Keyboard shortcuts
 
-`Space` play/pause · `R` reset · `1/2/5` speed · `H` H3 grid · `C` corridor · `Z` zones · `M` 2D/3D · `T` theme · `E` event log · `P` performance · `/` search · `?` shortcuts.
+`Space` play/pause · `R` reset · `1/2/5` speed · `H` H3 grid · `C` corridor · `Z` zones · `M` 2D/3D · `F` follow camera · `T` theme · `E` event log · `P` performance · `/` search · `?` shortcuts.
 
 ---
 
