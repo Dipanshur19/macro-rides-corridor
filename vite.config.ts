@@ -25,7 +25,7 @@ export default defineConfig({
             '@deck.gl/layers',
             '@deck.gl/geo-layers',
           ],
-          three: ['three', '@react-three/fiber', '@react-three/drei'],
+          three: ['three', '@react-three/fiber'],
         },
       },
     },
