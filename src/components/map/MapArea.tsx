@@ -34,32 +34,32 @@ export default function MapArea({ pipeline }: { pipeline: SpatialPipeline }) {
             </div>
           )}
           {viewMode === '3d' && (
-            <div className="glass card-hi pointer-events-none flex items-center gap-2 rounded-full px-4 py-1.5 text-2xs text-muted">
+            <div className="glass card-hi pointer-events-none hidden items-center gap-2 rounded-full px-4 py-1.5 text-2xs text-muted sm:flex">
               <Move3d size={13} /> Drag to rotate · Ctrl/Right-drag to tilt · Scroll to zoom
             </div>
           )}
         </div>
 
-        {/* right column panels */}
-        <div className="absolute right-3 top-3 flex flex-col gap-3">
+        {/* right column panels (desktop only) */}
+        <div className="absolute right-3 top-3 hidden flex-col gap-3 md:flex">
           <AnimatePresence>
             {panels.performance && <PerformancePanel key="perf" stats={pipeline.stats} />}
             {panels.h3Inspector && <H3Inspector key="h3" cells={pipeline.cells} />}
           </AnimatePresence>
         </div>
 
-        {/* bottom-right event log */}
-        <div className="absolute bottom-3 right-3">
+        {/* bottom-right event log (desktop only) */}
+        <div className="absolute bottom-3 right-3 hidden md:block">
           <AnimatePresence>{panels.eventLog && <EventLog key="log" />}</AnimatePresence>
         </div>
 
         {/* bottom-left legend */}
-        <div className="absolute bottom-3 left-3 hidden sm:block">
+        <div className="absolute bottom-3 left-3 hidden lg:block">
           <Legend />
         </div>
 
-        {/* bottom-center status pill */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+        {/* bottom-center status pill (desktop only) */}
+        <div className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 sm:block">
           <div className="glass card-hi flex items-center gap-4 rounded-xl px-4 py-2 text-2xs text-muted">
             <span>
               Mode:{' '}

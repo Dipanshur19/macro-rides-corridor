@@ -9,7 +9,7 @@ export default function MapControls() {
   const toggleFollow = useStore((s) => s.toggleFollow);
 
   return (
-    <div className="pointer-events-auto absolute left-3 top-[88px] flex flex-col gap-2">
+    <div className="pointer-events-auto absolute left-3 top-[88px] hidden flex-col gap-2 md:flex">
       <button
         onClick={requestRecenter}
         title="Recenter on route"
